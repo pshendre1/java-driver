@@ -16,12 +16,15 @@
 package com.datastax.oss.driver.internal.mapper.processor.dao;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.internal.core.util.concurrent.BlockingOperation;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.datastax.oss.driver.internal.mapper.MapperContext;
 import com.datastax.oss.driver.internal.mapper.processor.GeneratedNames;
 import com.datastax.oss.driver.internal.mapper.processor.ProcessorContext;
 import com.datastax.oss.driver.internal.mapper.processor.SingleFileCodeGenerator;
+import com.datastax.oss.driver.internal.mapper.processor.entity.EntityDefinition;
+import com.datastax.oss.driver.internal.mapper.processor.entity.PropertyDefinition;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -29,8 +32,14 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.concurrent.CompletableFuture;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 
 public class DaoImplementationGenerator extends SingleFileCodeGenerator {
 
@@ -107,6 +116,39 @@ public class DaoImplementationGenerator extends SingleFileCodeGenerator {
     classBuilder.addMethod(initBuilder.build());
     classBuilder.addMethod(constructorBuilder.build());
 
+    documentEntityConstants(classBuilder);
+
     return JavaFile.builder(implementationName.packageName(), classBuilder.build());
+  }
+
+  /**
+   * If the DAO has a constant of a mapped entity, dump the definition of that entity in the DAO's
+   * javadoc.
+   *
+   * @deprecated this is a quick and dirty test to check that entity parsing works, currently the
+   *     only way because we don't use entities in generated code yet. TODO delete
+   */
+  @Deprecated
+  private void documentEntityConstants(TypeSpec.Builder classBuilder) {
+    for (Element child : interfaceElement.getEnclosedElements()) {
+      if (child.getKind() == ElementKind.FIELD) {
+        VariableElement field = (VariableElement) child;
+        TypeMirror type = field.asType();
+        if (type.getKind() == TypeKind.DECLARED) {
+          Element element = ((DeclaredType) type).asElement();
+          if (element.getKind() == ElementKind.CLASS
+              && element.getAnnotation(Entity.class) != null) {
+            EntityDefinition entityDefinition =
+                context.getEntityFactory().getDefinition((TypeElement) element);
+
+            classBuilder.addJavadoc(entityDefinition.getCqlName() + "\n");
+            for (PropertyDefinition propertyDefinition : entityDefinition.getProperties()) {
+              classBuilder.addJavadoc(
+                  propertyDefinition.getCqlName() + " " + propertyDefinition.getType() + "\n");
+            }
+          }
+        }
+      }
+    }
   }
 }
