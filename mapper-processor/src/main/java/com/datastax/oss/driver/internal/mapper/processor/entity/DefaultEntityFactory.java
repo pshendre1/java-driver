@@ -74,8 +74,11 @@ public class DefaultEntityFactory implements EntityFactory {
                 .getMessager()
                 .warn(
                     method,
-                    "Ignoring getter because there is a setter "
-                        + "with the same name but a different type (%s)",
+                    "Ignoring method %s %s() because there is a setter "
+                        + "with the same name but a different type: %s(%s)",
+                    propertyType,
+                    methodName,
+                    builder.getSetterName(),
                     builder.getType());
             continue;
           }
@@ -93,9 +96,12 @@ public class DefaultEntityFactory implements EntityFactory {
                 .getMessager()
                 .warn(
                     method,
-                    "Ignoring entity because there is a getter "
-                        + "with the same name but a different type (%s)",
-                    builder.getType());
+                    "Ignoring method %s(%s) because there is a getter "
+                        + "with the same name but a different type: %s %s()",
+                    methodName,
+                    propertyType,
+                    builder.getType(),
+                    builder.getGetterName());
             continue;
           }
           builder.withSetterName(methodName);
@@ -105,7 +111,7 @@ public class DefaultEntityFactory implements EntityFactory {
 
     ImmutableList.Builder<PropertyDefinition> definitions = ImmutableList.builder();
     for (DefaultPropertyDefinition.Builder builder : propertyBuilders.values()) {
-      if (builder.hasGetterAndSetter()) {
+      if (builder.getGetterName() != null && builder.getSetterName() != null) {
         definitions.add(builder.build());
       }
     }

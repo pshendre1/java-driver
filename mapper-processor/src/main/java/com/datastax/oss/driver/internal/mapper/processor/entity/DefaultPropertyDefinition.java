@@ -77,8 +77,12 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
       return type;
     }
 
-    public boolean hasGetterAndSetter() {
-      return getterName != null && setterName != null;
+    public String getGetterName() {
+      return getterName;
+    }
+
+    public String getSetterName() {
+      return setterName;
     }
 
     DefaultPropertyDefinition build() {
