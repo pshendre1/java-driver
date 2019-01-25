@@ -26,4 +26,7 @@ public interface PropertyDefinition {
   String getSetterName();
 
   TypeName getType();
+
+  /** Whether the {@linkplain #getType() Java type} is itself an annotated entity. */
+  boolean isEntity();
 }

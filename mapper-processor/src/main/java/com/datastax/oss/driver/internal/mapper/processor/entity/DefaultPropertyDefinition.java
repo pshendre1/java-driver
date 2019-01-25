@@ -23,13 +23,15 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
   private final String getterName;
   private final String setterName;
   private final TypeName type;
+  private final boolean isEntity;
 
   public DefaultPropertyDefinition(
-      String cqlName, String getterName, String setterName, TypeName type) {
+      String cqlName, String getterName, String setterName, TypeName type, boolean isEntity) {
     this.cqlName = cqlName;
     this.getterName = getterName;
     this.setterName = setterName;
     this.type = type;
+    this.isEntity = isEntity;
   }
 
   @Override
@@ -52,15 +54,22 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
     return type;
   }
 
+  @Override
+  public boolean isEntity() {
+    return isEntity;
+  }
+
   public static class Builder {
     private final String cqlName;
     private final TypeName type;
+    private final boolean isEntity;
     private String getterName;
     private String setterName;
 
-    public Builder(String cqlName, TypeName type) {
+    public Builder(String cqlName, TypeName type, boolean isEntity) {
       this.cqlName = cqlName;
       this.type = type;
+      this.isEntity = isEntity;
     }
 
     public Builder withGetterName(String getterName) {
@@ -86,7 +95,7 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
     }
 
     DefaultPropertyDefinition build() {
-      return new DefaultPropertyDefinition(cqlName, getterName, setterName, type);
+      return new DefaultPropertyDefinition(cqlName, getterName, setterName, type, isEntity);
     }
   }
 }

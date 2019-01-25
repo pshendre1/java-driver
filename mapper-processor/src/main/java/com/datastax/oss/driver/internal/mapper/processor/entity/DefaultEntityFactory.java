@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.driver.internal.mapper.processor.entity;
 
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.internal.mapper.processor.ProcessorContext;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
 import com.squareup.javapoet.TypeName;
@@ -28,6 +29,9 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 
 public class DefaultEntityFactory implements EntityFactory {
 
@@ -60,14 +64,17 @@ public class DefaultEntityFactory implements EntityFactory {
         ExecutableElement method = (ExecutableElement) child;
         String methodName = method.getSimpleName().toString();
         if (methodName.startsWith("get") && method.getParameters().isEmpty()) {
-          TypeName propertyType = TypeName.get(method.getReturnType());
+          TypeMirror returnTypeMirror = method.getReturnType();
+          TypeName propertyType = TypeName.get(returnTypeMirror);
           if (TypeName.VOID.equals(propertyType)) {
             continue;
           }
           String propertyName = Introspector.decapitalize(methodName.substring(3));
           DefaultPropertyDefinition.Builder builder = propertyBuilders.get(propertyName);
           if (builder == null) {
-            builder = new DefaultPropertyDefinition.Builder(propertyName, propertyType);
+            builder =
+                new DefaultPropertyDefinition.Builder(
+                    propertyName, propertyType, isEntity(returnTypeMirror));
             propertyBuilders.put(propertyName, builder);
           } else if (!builder.getType().equals(propertyType)) {
             context
@@ -86,10 +93,13 @@ public class DefaultEntityFactory implements EntityFactory {
         } else if (methodName.startsWith("set") && method.getParameters().size() == 1) {
           String propertyName = Introspector.decapitalize(methodName.substring(3));
           VariableElement parameter = method.getParameters().get(0);
-          TypeName propertyType = TypeName.get(parameter.asType());
+          TypeMirror typeMirror = parameter.asType();
+          TypeName propertyType = TypeName.get(typeMirror);
           DefaultPropertyDefinition.Builder builder = propertyBuilders.get(propertyName);
           if (builder == null) {
-            builder = new DefaultPropertyDefinition.Builder(propertyName, propertyType);
+            builder =
+                new DefaultPropertyDefinition.Builder(
+                    propertyName, propertyType, isEntity(typeMirror));
             propertyBuilders.put(propertyName, builder);
           } else if (!builder.getType().equals(propertyType)) {
             context
@@ -118,5 +128,10 @@ public class DefaultEntityFactory implements EntityFactory {
 
     String entityName = Introspector.decapitalize(classElement.getSimpleName().toString());
     return new DefaultEntityDefinition(entityName, definitions.build());
+  }
+
+  private boolean isEntity(TypeMirror typeMirror) {
+    return (typeMirror.getKind() == TypeKind.DECLARED)
+        && (((DeclaredType) typeMirror).asElement().getAnnotation(Entity.class) != null);
   }
 }
