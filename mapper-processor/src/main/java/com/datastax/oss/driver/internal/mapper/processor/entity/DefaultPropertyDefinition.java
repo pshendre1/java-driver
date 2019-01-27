@@ -16,6 +16,7 @@
 package com.datastax.oss.driver.internal.mapper.processor.entity;
 
 import com.squareup.javapoet.TypeName;
+import javax.lang.model.element.TypeElement;
 
 public class DefaultPropertyDefinition implements PropertyDefinition {
 
@@ -23,15 +24,19 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
   private final String getterName;
   private final String setterName;
   private final TypeName type;
-  private final boolean isEntity;
+  private final TypeElement entityElement;
 
   public DefaultPropertyDefinition(
-      String cqlName, String getterName, String setterName, TypeName type, boolean isEntity) {
+      String cqlName,
+      String getterName,
+      String setterName,
+      TypeName type,
+      TypeElement entityElement) {
     this.cqlName = cqlName;
     this.getterName = getterName;
     this.setterName = setterName;
     this.type = type;
-    this.isEntity = isEntity;
+    this.entityElement = entityElement;
   }
 
   @Override
@@ -55,21 +60,21 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
   }
 
   @Override
-  public boolean isEntity() {
-    return isEntity;
+  public TypeElement getEntityElement() {
+    return entityElement;
   }
 
   public static class Builder {
     private final String cqlName;
     private final TypeName type;
-    private final boolean isEntity;
+    private final TypeElement entityElement;
     private String getterName;
     private String setterName;
 
-    public Builder(String cqlName, TypeName type, boolean isEntity) {
+    public Builder(String cqlName, TypeName type, TypeElement entityElement) {
       this.cqlName = cqlName;
       this.type = type;
-      this.isEntity = isEntity;
+      this.entityElement = entityElement;
     }
 
     public Builder withGetterName(String getterName) {
@@ -95,7 +100,7 @@ public class DefaultPropertyDefinition implements PropertyDefinition {
     }
 
     DefaultPropertyDefinition build() {
-      return new DefaultPropertyDefinition(cqlName, getterName, setterName, type, isEntity);
+      return new DefaultPropertyDefinition(cqlName, getterName, setterName, type, entityElement);
     }
   }
 }

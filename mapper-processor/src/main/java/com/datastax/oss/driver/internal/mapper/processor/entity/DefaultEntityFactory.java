@@ -74,7 +74,7 @@ public class DefaultEntityFactory implements EntityFactory {
           if (builder == null) {
             builder =
                 new DefaultPropertyDefinition.Builder(
-                    propertyName, propertyType, isEntity(returnTypeMirror));
+                    propertyName, propertyType, getEntityElement(returnTypeMirror));
             propertyBuilders.put(propertyName, builder);
           } else if (!builder.getType().equals(propertyType)) {
             context
@@ -99,7 +99,7 @@ public class DefaultEntityFactory implements EntityFactory {
           if (builder == null) {
             builder =
                 new DefaultPropertyDefinition.Builder(
-                    propertyName, propertyType, isEntity(typeMirror));
+                    propertyName, propertyType, getEntityElement(typeMirror));
             propertyBuilders.put(propertyName, builder);
           } else if (!builder.getType().equals(propertyType)) {
             context
@@ -130,8 +130,13 @@ public class DefaultEntityFactory implements EntityFactory {
     return new DefaultEntityDefinition(entityName, definitions.build());
   }
 
-  private boolean isEntity(TypeMirror typeMirror) {
-    return (typeMirror.getKind() == TypeKind.DECLARED)
-        && (((DeclaredType) typeMirror).asElement().getAnnotation(Entity.class) != null);
+  private TypeElement getEntityElement(TypeMirror typeMirror) {
+    if (typeMirror.getKind() == TypeKind.DECLARED) {
+      Element element = ((DeclaredType) typeMirror).asElement();
+      if (element.getKind() == ElementKind.CLASS && element.getAnnotation(Entity.class) != null) {
+        return (TypeElement) element;
+      }
+    }
+    return null;
   }
 }
